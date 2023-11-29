@@ -1,0 +1,12 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const controller_1 = require("../controller/controller");
+const router = (0, express_1.Router)();
+router.route("/create-auth").post(controller_1.createAuth);
+router.route("/find-auth").get(controller_1.findAuth);
+router.route("/:authID/find-one-auth").get(controller_1.findOneAuth);
+router.route("/:authID/delete-auth").delete(controller_1.deleteAuth);
+router.route("/:authID/:friendID/make-friend").patch(controller_1.makeFriend);
+router.route("/:authID/:friendID/un-friend").patch(controller_1.unFriend);
+exports.default = router;
