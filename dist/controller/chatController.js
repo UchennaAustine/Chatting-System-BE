@@ -16,6 +16,7 @@ exports.findOneChat = exports.deleteChat = exports.findAllChat = exports.findCha
 const status_1 = require("../utils/status");
 const chatModel_1 = __importDefault(require("../model/chatModel"));
 const model_1 = __importDefault(require("../model/model"));
+const amqplib_1 = __importDefault(require("amqplib"));
 const createChat = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { authID, friendID } = req.params;
@@ -31,6 +32,11 @@ const createChat = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
                 const chat = yield chatModel_1.default.create({
                     member: [authID, friendID],
                 });
+                //sending to the index && notification
+                const URL = "amqp://localhost:5672";
+                const connect = yield amqplib_1.default.connect(URL);
+                const channel = yield connect.createChannel();
+                yield channel.sendToQueue("sendChat", Buffer.from(JSON.stringify(chat)));
                 return res.status(status_1.status.CREATED).json({
                     message: "Chat created successfully",
                     data: chat,
@@ -97,6 +103,10 @@ const deleteChat = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
     try {
         const { chatID } = req.params;
         const chat = yield chatModel_1.default.findByIdAndDelete(chatID);
+        const URL = "amqp://localhost:5672";
+        const connect = yield amqplib_1.default.connect(URL);
+        const channel = yield connect.createChannel();
+        yield channel.sendToQueue("sendChat", Buffer.from(JSON.stringify(chat)));
         return res.status(status_1.status.OK).json({
             message: `Chat has being delete`,
         });

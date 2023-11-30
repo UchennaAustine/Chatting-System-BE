@@ -15,19 +15,20 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.findChatMessage = exports.createChatMessage = void 0;
 const status_1 = require("../utils/status");
 const chatMessageModel_1 = __importDefault(require("../model/chatMessageModel"));
-const chatModel_1 = __importDefault(require("../model/chatModel"));
-const model_1 = __importDefault(require("../model/model"));
+const amqplib_1 = __importDefault(require("amqplib"));
 const createChatMessage = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { authID, chatID } = req.params;
         const { message } = req.body;
-        const user = yield model_1.default.findById(authID);
-        const chat = yield chatModel_1.default.findById(chatID);
         const chatMessage = yield chatMessageModel_1.default.create({
             authID,
             chatID,
             message,
         });
+        const URL = "amqp://localhost:5672";
+        const connect = yield amqplib_1.default.connect(URL);
+        const channel = yield connect.createChannel();
+        yield channel.sendToQueue("sendChat", Buffer.from(JSON.stringify(chatMessage)));
         return res.status(status_1.status.CREATED).json({
             message: `Chat Message Creation`,
             data: chatMessage,

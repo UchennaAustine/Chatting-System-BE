@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import { status } from "../utils/status";
 import chatModel from "../model/chatModel";
 import model from "../model/model";
+import amqplib from "amqplib";
 
 export const createChat = async (
   req: Request,
@@ -26,6 +27,15 @@ export const createChat = async (
         const chat = await chatModel.create({
           member: [authID, friendID],
         });
+        //sending to the index && notification
+        const URL: string = "amqp://localhost:5672";
+        const connect = await amqplib.connect(URL);
+        const channel = await connect.createChannel();
+
+        await channel.sendToQueue(
+          "sendChat",
+          Buffer.from(JSON.stringify(chat))
+        );
 
         return res.status(status.CREATED).json({
           message: "Chat created successfully",
@@ -99,6 +109,12 @@ export const deleteChat = async (
     const { chatID } = req.params;
 
     const chat = await chatModel.findByIdAndDelete(chatID);
+
+    const URL: string = "amqp://localhost:5672";
+    const connect = await amqplib.connect(URL);
+    const channel = await connect.createChannel();
+
+    await channel.sendToQueue("sendChat", Buffer.from(JSON.stringify(chat)));
     return res.status(status.OK).json({
       message: `Chat has being delete`,
     });

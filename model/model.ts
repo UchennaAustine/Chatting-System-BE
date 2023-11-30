@@ -1,4 +1,4 @@
-import mongoose, { Schema, model } from "mongoose";
+import mongoose, { Schema, model, Document } from "mongoose";
 
 interface iAuth {
   email?: string;
@@ -7,7 +7,7 @@ interface iAuth {
   friend?: Array<string>;
 }
 
-interface iAuthData extends iAuth, mongoose.Document {}
+interface iAuthData extends iAuth, Document {}
 
 const authModel = new Schema(
   {

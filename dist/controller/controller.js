@@ -15,6 +15,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.unFriend = exports.makeFriend = exports.deleteAuth = exports.findOneAuth = exports.findAuth = exports.createAuth = void 0;
 const status_1 = require("../utils/status");
 const model_1 = __importDefault(require("../model/model"));
+const amqplib_1 = __importDefault(require("amqplib"));
 const createAuth = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { userName, email, password } = req.body;
@@ -115,6 +116,10 @@ const makeFriend = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
                 let friendPush = [...friend.friend, authID];
                 const makeFri = yield model_1.default.findByIdAndUpdate(authID, { friend: userPush }, { new: true });
                 const makeAuth = yield model_1.default.findByIdAndUpdate(friendID, { friend: friendPush }, { new: true });
+                const URL = "amqp://localhost:5672";
+                const connect = yield amqplib_1.default.connect(URL);
+                const channel = yield connect.createChannel();
+                yield channel.sendToQueue("info", Buffer.from(JSON.stringify({ makeFri, makeAuth })));
                 return res.status(status_1.status.OK).json({
                     message: "You're now Friends",
                     data: { makeFri, makeAuth },
@@ -145,6 +150,10 @@ const unFriend = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
             let friendPush = yield friend.friend.filter((el) => el !== authID);
             const makeFri = yield model_1.default.findByIdAndUpdate(authID, { friend: userPush }, { new: true });
             const makeAuth = yield model_1.default.findByIdAndUpdate(authID, { friend: friendPush }, { new: true });
+            const URL = "amqp://localhost:5672";
+            const connect = yield amqplib_1.default.connect(URL);
+            const channel = yield connect.createChannel();
+            yield channel.sendToQueue("info", Buffer.from(JSON.stringify({ makeFri, makeAuth })));
             return res.status(status_1.status.OK).json({
                 message: "No Longer Friends",
                 data: { makeFri, makeAuth },

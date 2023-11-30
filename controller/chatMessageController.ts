@@ -1,8 +1,7 @@
 import { Request, Response } from "express";
 import { status } from "../utils/status";
 import chatMessageModel from "../model/chatMessageModel";
-import chatModel from "../model/chatModel";
-import model from "../model/model";
+import amqplib from "amqplib";
 
 export const createChatMessage = async (
   req: Request,
@@ -12,14 +11,20 @@ export const createChatMessage = async (
     const { authID, chatID } = req.params;
     const { message } = req.body;
 
-    const user: any = await model.findById(authID);
-    const chat: any = await chatModel.findById(chatID);
-
     const chatMessage = await chatMessageModel.create({
       authID,
       chatID,
       message,
     });
+
+    const URL: string = "amqp://localhost:5672";
+    const connect = await amqplib.connect(URL);
+    const channel = await connect.createChannel();
+
+    await channel.sendToQueue(
+      "sendChat",
+      Buffer.from(JSON.stringify(chatMessage))
+    );
 
     return res.status(status.CREATED).json({
       message: `Chat Message Creation`,

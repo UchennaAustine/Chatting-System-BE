@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import { status } from "../utils/status";
 import authModel from "../model/model";
+import amqplib from "amqplib";
 
 export const createAuth = async (
   req: Request,
@@ -128,6 +129,15 @@ export const makeFriend = async (
           { new: true }
         );
 
+        const URL: string = "amqp://localhost:5672";
+        const connect = await amqplib.connect(URL);
+        const channel = await connect.createChannel();
+
+        await channel.sendToQueue(
+          "info",
+          Buffer.from(JSON.stringify({ makeFri, makeAuth }))
+        );
+
         return res.status(status.OK).json({
           message: "You're now Friends",
           data: { makeFri, makeAuth },
@@ -168,6 +178,15 @@ export const unFriend = async (
         authID,
         { friend: friendPush },
         { new: true }
+      );
+
+      const URL: string = "amqp://localhost:5672";
+      const connect = await amqplib.connect(URL);
+      const channel = await connect.createChannel();
+
+      await channel.sendToQueue(
+        "info",
+        Buffer.from(JSON.stringify({ makeFri, makeAuth }))
       );
 
       return res.status(status.OK).json({
