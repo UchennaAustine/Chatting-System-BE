@@ -17,14 +17,19 @@ export const createChatMessage = async (
       message,
     });
 
+    // const URL: string =
+    //   "amqps://mqclkzbe:92HIEuK2frGjEP8O8FS_rpJG2lTicnGa@octopus.rmq3.cloudamqp.com/mqclkzbe";
+
     const URL: string = "amqp://localhost:5672";
     const connect = await amqplib.connect(URL);
     const channel = await connect.createChannel();
+    const queueName = "messages";
 
     await channel.sendToQueue(
-      "sendChat",
+      queueName,
       Buffer.from(JSON.stringify(chatMessage))
     );
+    console.log(chatMessage);
 
     return res.status(status.CREATED).json({
       message: `Chat Message Creation`,

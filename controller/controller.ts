@@ -74,6 +74,43 @@ export const findOneAuth = async (
   }
 };
 
+export const updateAuth = async (req: Request, res: Response) => {
+  try {
+    const { authID } = req.params;
+    const { userName } = req.body;
+
+    const user = await authModel.findById(authID);
+
+    if (user) {
+      const userUpdate = await authModel.findByIdAndUpdate(
+        authID,
+        { userName },
+        { new: true }
+      );
+
+      const URL: string = "amqp://localhost:5672";
+      const connect = await amqplib.connect(URL);
+      const channel = await connect.createChannel();
+      const queueName = "messages";
+      await channel.assertQueue(queueName);
+      await channel.sendToQueue(
+        queueName,
+        Buffer.from(JSON.stringify(userUpdate))
+      );
+
+      return res.status(status.OK).json({
+        message: "Users' Info has Updated",
+        data: userUpdate,
+      });
+    }
+  } catch (error: any) {
+    return res.status(status.BAD_REQUEST).json({
+      message: `Users' Info Update error:${error.message}`,
+      info: error,
+    });
+  }
+};
+
 export const deleteAuth = async (
   req: Request,
   res: Response
@@ -132,9 +169,10 @@ export const makeFriend = async (
         const URL: string = "amqp://localhost:5672";
         const connect = await amqplib.connect(URL);
         const channel = await connect.createChannel();
+        const queueName = "messages";
 
         await channel.sendToQueue(
-          "info",
+          queueName,
           Buffer.from(JSON.stringify({ makeFri, makeAuth }))
         );
 
@@ -183,9 +221,11 @@ export const unFriend = async (
       const URL: string = "amqp://localhost:5672";
       const connect = await amqplib.connect(URL);
       const channel = await connect.createChannel();
+      const queueName = "messages";
+      await channel.assertQueue(queueName);
 
       await channel.sendToQueue(
-        "info",
+        queueName,
         Buffer.from(JSON.stringify({ makeFri, makeAuth }))
       );
 

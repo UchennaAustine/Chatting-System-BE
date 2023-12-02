@@ -32,10 +32,7 @@ export const createChat = async (
         const connect = await amqplib.connect(URL);
         const channel = await connect.createChannel();
 
-        await channel.sendToQueue(
-          "sendChat",
-          Buffer.from(JSON.stringify(chat))
-        );
+        await channel.sendToQueue("info", Buffer.from(JSON.stringify(chat)));
 
         return res.status(status.CREATED).json({
           message: "Chat created successfully",
@@ -114,7 +111,7 @@ export const deleteChat = async (
     const connect = await amqplib.connect(URL);
     const channel = await connect.createChannel();
 
-    await channel.sendToQueue("sendChat", Buffer.from(JSON.stringify(chat)));
+    await channel.sendToQueue("info", Buffer.from(JSON.stringify(chat)));
     return res.status(status.OK).json({
       message: `Chat has being delete`,
     });
