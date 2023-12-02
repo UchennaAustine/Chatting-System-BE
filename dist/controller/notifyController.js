@@ -12,9 +12,10 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.createNotification = void 0;
+exports.deleteOneNotification = exports.readNotification = exports.createNotification = void 0;
 const status_1 = require("../utils/status");
 const notifyModel_1 = __importDefault(require("../model/notifyModel"));
+const amqplib_1 = __importDefault(require("amqplib"));
 const createNotification = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { notification } = req.body;
@@ -22,13 +23,39 @@ const createNotification = (req, res) => __awaiter(void 0, void 0, void 0, funct
             const info = yield notifyModel_1.default.create({
                 notification,
             });
+            // const url =
+            //   "amqps://mqclkzbe:92HIEuK2frGjEP8O8FS_rpJG2lTicnGa@octopus.rmq3.cloudamqp.com/mqclkzbe";
+            const amqpServer = "amqp://localhost:5672";
+            const connect = yield amqplib_1.default.connect(amqpServer);
+            const channel = yield connect.createChannel();
+            yield channel.sendToQueue("send", Buffer.from(JSON.stringify(info)));
             return res.status(status_1.status.CREATED).json({
                 message: `Notication`,
                 data: info,
             });
         }
         else {
-            const url = "amqp://127.0.0.1.27107:5672";
+            // const url =
+            //   "amqps://mqclkzbe:92HIEuK2frGjEP8O8FS_rpJG2lTicnGa@octopus.rmq3.cloudamqp.com/mqclkzbe";
+            const amqpServer = "amqp://localhost:5672";
+            let newData = [];
+            const connect = yield amqplib_1.default.connect(amqpServer);
+            const channel = yield connect.createChannel();
+            const queueName = "messages";
+            yield channel.assertQueue(queueName).then((res) => {
+                console.log("connected", res);
+            });
+            yield channel.consume(queueName, (res) => __awaiter(void 0, void 0, void 0, function* () {
+                newData.push(yield JSON.parse(res === null || res === void 0 ? void 0 : res.content.toString()));
+                yield channel.sendToQueue("send", Buffer.from(JSON.stringify(res)));
+                yield notifyModel_1.default.create({
+                    notification: res,
+                });
+                yield channel.ack(res);
+            }));
+            return res.status(status_1.status.CREATED).json({
+                message: "New Notification",
+            });
         }
     }
     catch (error) {
@@ -39,3 +66,33 @@ const createNotification = (req, res) => __awaiter(void 0, void 0, void 0, funct
     }
 });
 exports.createNotification = createNotification;
+const readNotification = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const notifications = yield notifyModel_1.default.find();
+        return res.status(status_1.status.OK).json({
+            message: `Messages: ${notifications === null || notifications === void 0 ? void 0 : notifications.length}`,
+            data: notifications,
+        });
+    }
+    catch (error) {
+        return res.status(404).json({
+            message: "Error",
+        });
+    }
+});
+exports.readNotification = readNotification;
+const deleteOneNotification = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const { notifyID } = req.params;
+        const notifications = yield notifyModel_1.default.findByIdAndDelete(notifyID);
+        return res.status(status_1.status.OK).json({
+            message: `Notification has being deleted:`,
+        });
+    }
+    catch (error) {
+        return res.status(status_1.status.BAD_REQUEST).json({
+            message: "Error",
+        });
+    }
+});
+exports.deleteOneNotification = deleteOneNotification;

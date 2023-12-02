@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.unFriend = exports.makeFriend = exports.deleteAuth = exports.findOneAuth = exports.findAuth = exports.createAuth = void 0;
+exports.unFriend = exports.makeFriend = exports.deleteAuth = exports.updateAuth = exports.findOneAuth = exports.findAuth = exports.createAuth = void 0;
 const status_1 = require("../utils/status");
 const model_1 = __importDefault(require("../model/model"));
 const amqplib_1 = __importDefault(require("amqplib"));
@@ -77,6 +77,33 @@ const findOneAuth = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
     }
 });
 exports.findOneAuth = findOneAuth;
+const updateAuth = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const { authID } = req.params;
+        const { userName } = req.body;
+        const user = yield model_1.default.findById(authID);
+        if (user) {
+            const userUpdate = yield model_1.default.findByIdAndUpdate(authID, { userName }, { new: true });
+            const URL = "amqp://localhost:5672";
+            const connect = yield amqplib_1.default.connect(URL);
+            const channel = yield connect.createChannel();
+            const queueName = "messages";
+            yield channel.assertQueue(queueName);
+            yield channel.sendToQueue(queueName, Buffer.from(JSON.stringify(userUpdate)));
+            return res.status(status_1.status.OK).json({
+                message: "Users' Info has Updated",
+                data: userUpdate,
+            });
+        }
+    }
+    catch (error) {
+        return res.status(status_1.status.BAD_REQUEST).json({
+            message: `Users' Info Update error:${error.message}`,
+            info: error,
+        });
+    }
+});
+exports.updateAuth = updateAuth;
 const deleteAuth = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { authID } = req.params;
@@ -119,7 +146,8 @@ const makeFriend = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
                 const URL = "amqp://localhost:5672";
                 const connect = yield amqplib_1.default.connect(URL);
                 const channel = yield connect.createChannel();
-                yield channel.sendToQueue("info", Buffer.from(JSON.stringify({ makeFri, makeAuth })));
+                const queueName = "messages";
+                yield channel.sendToQueue(queueName, Buffer.from(JSON.stringify({ makeFri, makeAuth })));
                 return res.status(status_1.status.OK).json({
                     message: "You're now Friends",
                     data: { makeFri, makeAuth },
@@ -153,7 +181,9 @@ const unFriend = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
             const URL = "amqp://localhost:5672";
             const connect = yield amqplib_1.default.connect(URL);
             const channel = yield connect.createChannel();
-            yield channel.sendToQueue("info", Buffer.from(JSON.stringify({ makeFri, makeAuth })));
+            const queueName = "messages";
+            yield channel.assertQueue(queueName);
+            yield channel.sendToQueue(queueName, Buffer.from(JSON.stringify({ makeFri, makeAuth })));
             return res.status(status_1.status.OK).json({
                 message: "No Longer Friends",
                 data: { makeFri, makeAuth },

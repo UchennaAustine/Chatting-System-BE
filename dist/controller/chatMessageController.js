@@ -25,10 +25,14 @@ const createChatMessage = (req, res) => __awaiter(void 0, void 0, void 0, functi
             chatID,
             message,
         });
+        // const URL: string =
+        //   "amqps://mqclkzbe:92HIEuK2frGjEP8O8FS_rpJG2lTicnGa@octopus.rmq3.cloudamqp.com/mqclkzbe";
         const URL = "amqp://localhost:5672";
         const connect = yield amqplib_1.default.connect(URL);
         const channel = yield connect.createChannel();
-        yield channel.sendToQueue("sendChat", Buffer.from(JSON.stringify(chatMessage)));
+        const queueName = "messages";
+        yield channel.sendToQueue(queueName, Buffer.from(JSON.stringify(chatMessage)));
+        console.log(chatMessage);
         return res.status(status_1.status.CREATED).json({
             message: `Chat Message Creation`,
             data: chatMessage,

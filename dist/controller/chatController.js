@@ -36,7 +36,7 @@ const createChat = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
                 const URL = "amqp://localhost:5672";
                 const connect = yield amqplib_1.default.connect(URL);
                 const channel = yield connect.createChannel();
-                yield channel.sendToQueue("sendChat", Buffer.from(JSON.stringify(chat)));
+                yield channel.sendToQueue("info", Buffer.from(JSON.stringify(chat)));
                 return res.status(status_1.status.CREATED).json({
                     message: "Chat created successfully",
                     data: chat,
@@ -106,7 +106,7 @@ const deleteChat = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
         const URL = "amqp://localhost:5672";
         const connect = yield amqplib_1.default.connect(URL);
         const channel = yield connect.createChannel();
-        yield channel.sendToQueue("sendChat", Buffer.from(JSON.stringify(chat)));
+        yield channel.sendToQueue("info", Buffer.from(JSON.stringify(chat)));
         return res.status(status_1.status.OK).json({
             message: `Chat has being delete`,
         });
