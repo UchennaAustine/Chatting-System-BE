@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.deleteOneNotification = exports.readNotification = exports.createNotification = void 0;
+exports.deleteAllNotifications = exports.deleteOneNotification = exports.readNotification = exports.createNotification = void 0;
 const status_1 = require("../utils/status");
 const notifyModel_1 = __importDefault(require("../model/notifyModel"));
 const amqplib_1 = __importDefault(require("amqplib"));
@@ -75,8 +75,8 @@ const readNotification = (req, res) => __awaiter(void 0, void 0, void 0, functio
         });
     }
     catch (error) {
-        return res.status(404).json({
-            message: "Error",
+        return res.status(status_1.status.BAD_REQUEST).json({
+            message: "Error Reading Notifications",
         });
     }
 });
@@ -84,7 +84,7 @@ exports.readNotification = readNotification;
 const deleteOneNotification = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { notifyID } = req.params;
-        const notifications = yield notifyModel_1.default.findByIdAndDelete(notifyID);
+        yield notifyModel_1.default.findByIdAndDelete(notifyID);
         return res.status(status_1.status.OK).json({
             message: `Notification has being deleted:`,
         });
@@ -96,3 +96,19 @@ const deleteOneNotification = (req, res) => __awaiter(void 0, void 0, void 0, fu
     }
 });
 exports.deleteOneNotification = deleteOneNotification;
+const deleteAllNotifications = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        // Delete all notifications
+        yield notifyModel_1.default.deleteMany();
+        return res.status(status_1.status.OK).json({
+            message: "Notifications have been deleted",
+        });
+    }
+    catch (error) {
+        console.error(error);
+        return res.status(status_1.status.BAD_REQUEST).json({
+            message: "Error deleting notifications",
+        });
+    }
+});
+exports.deleteAllNotifications = deleteAllNotifications;

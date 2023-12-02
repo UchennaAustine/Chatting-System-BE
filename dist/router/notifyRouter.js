@@ -6,4 +6,5 @@ const router = (0, express_1.Router)();
 router.route("/notify").post(notifyController_1.createNotification);
 router.route("/read-notify").get(notifyController_1.readNotification);
 router.route("/:notifyID/delete-notify").delete(notifyController_1.deleteOneNotification);
+router.route("/empty-notify").delete(notifyController_1.deleteAllNotifications);
 exports.default = router;

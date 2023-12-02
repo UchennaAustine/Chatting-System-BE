@@ -67,8 +67,8 @@ export const readNotification = async (req: Request, res: Response) => {
       data: notifications,
     });
   } catch (error) {
-    return res.status(404).json({
-      message: "Error",
+    return res.status(status.BAD_REQUEST).json({
+      message: "Error Reading Notifications",
     });
   }
 };
@@ -76,7 +76,7 @@ export const readNotification = async (req: Request, res: Response) => {
 export const deleteOneNotification = async (req: Request, res: Response) => {
   try {
     const { notifyID } = req.params;
-    const notifications = await notifyModel.findByIdAndDelete(notifyID);
+    await notifyModel.findByIdAndDelete(notifyID);
 
     return res.status(status.OK).json({
       message: `Notification has being deleted:`,
@@ -84,6 +84,21 @@ export const deleteOneNotification = async (req: Request, res: Response) => {
   } catch (error) {
     return res.status(status.BAD_REQUEST).json({
       message: "Error",
+    });
+  }
+};
+export const deleteAllNotifications = async (req: Request, res: Response) => {
+  try {
+    // Delete all notifications
+    await notifyModel.deleteMany();
+
+    return res.status(status.OK).json({
+      message: "Notifications have been deleted",
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(status.BAD_REQUEST).json({
+      message: "Error deleting notifications",
     });
   }
 };
